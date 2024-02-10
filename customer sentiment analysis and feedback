@@ -1,0 +1,92 @@
+import numpy as np
+import pandas as pd
+import re
+import nltk
+import matplotlib.pyplot as plt
+
+from nltk.corpus import stopwords
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+from sklearn.model_selection import train_test_split
+
+from sklearn.ensemble import RandomForestClassifier
+
+from sklearn.metrics import accuracy_score
+
+data = pd.read_csv(r"C:\Users\divya\Downloads\purchase behaviou dataset.csv\purchase behaviou dataset.csv")
+
+data.head()
+
+print(data.shape)
+
+features = data.iloc[:, 2].values
+labels = data.iloc[:, 1].values
+
+processed_features = []
+for sentence in range(0, len(features)):
+    
+    processed_feature = re.sub(r'\W', ' ', str(features[sentence]))
+    
+    processed_feature= re.sub(r'\s+[a-zA-Z]\s+', ' ', processed_feature)
+    
+    processed_feature= re.sub(r'\^[a-zA-Z]\s+', ' ', processed_feature)
+    
+    processed_feature = re.sub(r'\s+', ' ', processed_feature, flags=re.I)
+    
+    processed_feature= re.sub(r'^b\s+', '', processed_feature)
+    
+    processed_feature = processed_feature.lower()
+    
+    processed_features.append(processed_feature)
+
+import nltk
+nltk.download('stopwords')
+
+from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+vectorizer = TfidfVectorizer(max_features=2500, min_df=7, max_df=0.8, stop_words=stopwords.words('english'))
+processed_features = vectorizer.fit_transform(processed_features).toarray()
+
+X_train, X_test, y_train, y_test = train_test_split(processed_features, labels, test_size=0.2, random_state=0)
+
+text_classifier = RandomForestClassifier(n_estimators=200, random_state=0)
+text_classifier.fit(X_train, y_train)
+
+predictions = text_classifier.predict(X_test)
+
+print(accuracy_score(y_test, predictions))
+
+import sklearn
+from sklearn import metrics
+import itertools
+import numpy as np
+import matplotlib.pyplot as plt
+
+def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
+    
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(classes))
+    plt.xticks(tick_marks, classes, rotation=45)
+    plt.yticks(tick_marks, classes)
+    
+    if normalize:
+        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("Normalized confusion matrix")
+    else:
+        print('Confusion matrix, without normalization')
+        
+    thresh = cm.max() / 2.
+    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        plt.text(j, i, cm[i, j], horizontalalignment="center", color="white" if cm[i, j] > thresh else "black")
+    
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+unique_labels = np.unique(y_test)  
+cm = metrics.confusion_matrix(y_test, predictions, labels=unique_labels)
+plot_confusion_matrix(cm, classes=unique_labels)
